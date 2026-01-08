@@ -1,55 +1,66 @@
+import os
 import subprocess
 from pathlib import Path
 
 # -----------------------------
-# Configurable environment variables
+# Docker image metadata
 # -----------------------------
 image_base = "lre-harness-node-java-app"
 image_version = "1.0"
 image_name = f"{image_base}:{image_version}"
 
-# Test-specific environment variables
+# -----------------------------
+# Environment variables
+# -----------------------------
+# Read from current environment (so GitHub secrets work)
 env_vars = {
-    "PLUGIN_LRE_ACTION": "ExecuteLreTest",
-    "PLUGIN_LRE_DESCRIPTION": "running new test",
-    "PLUGIN_LRE_SERVER": "<LREServer>/?tenant=fa128c06-5436-413d-9cfa-9f04bb738df3",
-    "PLUGIN_LRE_HTTPS_PROTOCOL": "false",
-    "PLUGIN_LRE_AUTHENTICATE_WITH_TOKEN": "false",
-    "PLUGIN_LRE_USERNAME": "<username>",
-    "PLUGIN_LRE_PASSWORD": "<password>",
-    "PLUGIN_LRE_DOMAIN": "<domain>",
-    "PLUGIN_LRE_PROJECT": "<project>",
-    "PLUGIN_LRE_TEST": "<testid>",
-    "PLUGIN_LRE_TEST_INSTANCE": "",
-    "PLUGIN_LRE_TIMESLOT_DURATION_HOURS": "0",
-    "PLUGIN_LRE_TIMESLOT_DURATION_MINUTES": "30",
-    "PLUGIN_LRE_POST_RUN_ACTION": "Collate and Analyze",
-    "PLUGIN_LRE_VUDS_MODE": "false",
-    "PLUGIN_LRE_TREND_REPORT": "5",
-    "PLUGIN_LRE_SEARCH_TIMESLOT": "false",
-    "PLUGIN_LRE_STATUS_BY_SLA": "false",
-    "PLUGIN_LRE_OUTPUT_DIR": "/harness/output",
-    "PLUGIN_LRE_WORKSPACE_DIR": "/harness/workspace",
-    "PLUGIN_LRE_ENABLE_STACKTRACE": "false",
+    key: os.environ.get(key, "")
+    for key in [
+        "PLUGIN_LRE_ACTION",
+        "PLUGIN_LRE_DESCRIPTION",
+        "PLUGIN_LRE_SERVER",
+        "PLUGIN_LRE_HTTPS_PROTOCOL",
+        "PLUGIN_LRE_AUTHENTICATE_WITH_TOKEN",
+        "PLUGIN_LRE_USERNAME",
+        "PLUGIN_LRE_PASSWORD",
+        "PLUGIN_LRE_DOMAIN",
+        "PLUGIN_LRE_PROJECT",
+        "PLUGIN_LRE_TEST",
+        "PLUGIN_LRE_TEST_INSTANCE",
+        "PLUGIN_LRE_TIMESLOT_DURATION_HOURS",
+        "PLUGIN_LRE_TIMESLOT_DURATION_MINUTES",
+        "PLUGIN_LRE_POST_RUN_ACTION",
+        "PLUGIN_LRE_VUDS_MODE",
+        "PLUGIN_LRE_TREND_REPORT",
+        "PLUGIN_LRE_SEARCH_TIMESLOT",
+        "PLUGIN_LRE_STATUS_BY_SLA",
+        "PLUGIN_LRE_OUTPUT_DIR",
+        "PLUGIN_LRE_WORKSPACE_DIR",
+        "PLUGIN_LRE_ENABLE_STACKTRACE",
+    ]
 }
 
+# -----------------------------
+# Docker volume helper
+# -----------------------------
+def path_for_docker(p: str) -> str:
+    """Convert path to Docker-friendly string (Linux/Windows)"""
+    return str(Path(p).resolve())
 
-def windows_path_for_docker(path: str) -> str:
-    """Convert Windows path to Docker-friendly forward slash path"""
-    return Path(path).resolve().as_posix()
-
-
+# -----------------------------
+# Run container
+# -----------------------------
 def run_test_container():
-    print(f"Beginning running a test using container of image {image_name} ...")
+    print(f"Beginning running a test using container {image_name} ...")
 
-    # Docker volume mappings
+    # Map volumes relative to current directory (works in GitHub Actions)
     volumes = [
-        f"{windows_path_for_docker('C:/temp/harness/output')}:/harness/output",
-        f"{windows_path_for_docker('C:/temp/harness/workspace')}:/harness/workspace",
+        f"{path_for_docker('./harness/output')}:{env_vars['PLUGIN_LRE_OUTPUT_DIR']}",
+        f"{path_for_docker('./harness/workspace')}:{env_vars['PLUGIN_LRE_WORKSPACE_DIR']}",
     ]
 
     # Build docker run command
-    cmd = ["docker", "run", "-it", "--rm"]
+    cmd = ["docker", "run", "--rm"]
 
     # Add volume mappings
     for vol in volumes:
@@ -57,17 +68,22 @@ def run_test_container():
 
     # Add environment variables
     for key, value in env_vars.items():
-        cmd += ["-e", f"{key}={value}"]
+        if value:  # only pass if set
+            cmd += ["-e", f"{key}={value}"]
 
     # Add image name
     cmd.append(image_name)
 
     # Run the docker command
     print("> Running Docker container...")
-    subprocess.run(cmd, shell=True, check=True)
+    subprocess.run(cmd, check=True)
 
-    print(f"Finished running a test using container of image {image_name} ...")
+    print(f"Finished running container {image_name}.")
 
-
+# -----------------------------
+# Main
+# -----------------------------
 if __name__ == "__main__":
+    os.makedirs("./harness/output", exist_ok=True)
+    os.makedirs("./harness/workspace", exist_ok=True)
     run_test_container()
