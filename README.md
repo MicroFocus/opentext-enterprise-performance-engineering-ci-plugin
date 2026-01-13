@@ -1,3 +1,5 @@
+![OpenText Logo](https://upload.wikimedia.org/wikipedia/commons/1/1b/OpenText_logo.svg)
+
 # OpenText Enterprise Performance Engineering – CI/CD Plugin
 
 ## Overview
