@@ -2,9 +2,9 @@
 
 ## Overview
 
-This Docker image provides a **CI/CD-friendly plugin** for triggering, monitoring, and collecting results from **OpenText Enterprise Performance Engineering (formerly LoadRunner Enterprise)**.
+This repository is used to build Docker image providing a **CI/CD-friendly plugin** for triggering, monitoring, and collecting results from **OpenText Enterprise Performance Engineering (formerly LoadRunner Enterprise)**.
 
-It is designed to run **non-interactively** inside CI/CD pipelines (Harness, GitHub Actions, GitLab CI, Jenkins, Kubernetes jobs, etc.) using **environment variables for configuration and outputs**.
+The docker image is designed to run **non-interactively** inside CI/CD pipelines (Harness, GitHub Actions, GitLab CI, Jenkins, Kubernetes jobs, etc.) using **environment variables for configuration and outputs**.
 
 ---
 
@@ -226,7 +226,5 @@ Thanks to all contributors, reviewers, and users who helped improve stability, u
 ---
 ## License
 This project is licensed under the MIT License.
-See the [LICENSE](https://github.com/MicroFocus/opentext-enterprise-performance-engineering-plugin/blob/main/LICENSE) file for details.
+See the [LICENSE](LICENSE) file for details.
 ---
-## Source code
-Github repository: [Opentext Enterprise Performance Engineering plugin](https://github.com/MicroFocus/opentext-enterprise-performance-engineering-plugin)
