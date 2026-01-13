@@ -1,4 +1,4 @@
-# enterprise-performance-engineering-harness-plugin
+# Opentext Enterprise Performance Engineering plugin
 
 ## Requirements
 
@@ -45,8 +45,8 @@
 Example of running the plugin locally using Docker:
 
 ```powershell
-$imageBase = "my-node-java-app"
-$imageVersion = "1.0"
+$imageBase = "danieldanan/opentext-enterprise-performance-engineering-test"
+$imageVersion = "latest"
 $imageName = "${imageBase}:${imageVersion}"
 
 docker run -it --rm `
@@ -83,7 +83,7 @@ steps:
       name: Run LRE Test
       type: Container
       spec:
-        image: my-node-java-app:1.0
+        image: danieldanan/opentext-enterprise-performance-engineering-test:latest
         shell: Sh
         envVariables:
           PLUGIN_LRE_ACTION: ExecuteLreTest
@@ -140,7 +140,7 @@ Set `PLUGIN_LRE_AUTHENTICATE_WITH_TOKEN=true` to enable token authentication.
 - GitHub Action: https://github.com/MicroFocus/lre-gh-action
 - GitLab CI Plugin: https://gitlab.com/loadrunner-enterprise/lre-gitlab-action
 
-This Harness plugin uses the same core logic and configuration model.
+This image plugin uses the same core logic and configuration model.
 
 ## Authors and acknowledgment
 
@@ -150,7 +150,7 @@ Contributors:
 - Daniel Danan
 
 Thanks to all contributors, reviewers, and users who provided feedback and helped
-improve the stability and usability of this plugin.
+improve the stability and usability of this image.
 
 ## License
 
