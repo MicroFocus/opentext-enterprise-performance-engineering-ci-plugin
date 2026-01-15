@@ -267,36 +267,79 @@ public class LreTestRunBuilder {
         return lreTestRunModel;
     }
 
-    public boolean perform()
-            throws InterruptedException, IOException {
+    public boolean perform() throws InterruptedException, IOException {
         String testToCreate = "";
         String testName = "";
         String testFolderPath = "";
         String fileExtension = "";
+
         if ("CREATE_TEST".equals(getLreTestRunModel().getTestToRun())) {
             if (verifyStringIsPath(workspace, getLreTestRunModel().getTestContentToCreate())) {
                 testName = fileNameWithoutExtension(workspace, getLreTestRunModel().getTestContentToCreate());
                 testFolderPath = filePath(getLreTestRunModel().getTestContentToCreate());
                 testToCreate = fileContenToString(workspace, getLreTestRunModel().getTestContentToCreate());
                 fileExtension = retreiveFileExtension(workspace, getLreTestRunModel().getTestContentToCreate());
-            } else
+            } else {
                 testToCreate = getLreTestRunModel().getTestContentToCreate();
+            }
         }
+
         LreTestRunClient lreTestRunClient =
                 new LreTestRunClient(getLreTestRunModel(), testToCreate, testName,
                         testFolderPath, fileExtension);
+
         Testsuites testsuites = execute(lreTestRunClient);
-        File resultsFilePath = (output != null && !output.toString().isBlank()) ?
-                new File(Paths.get(output.toString(), getJunitResultsFileName()).toString()) :
-                new File(Paths.get(workspace.toString(), artifactsResourceName, getJunitResultsFileName()).toString());
-        if (resultsFilePath.createNewFile()) {
-            LogHelper.log("File created: " + resultsFilePath.getName(), true);
-        } else {
-            LogHelper.log("File " + resultsFilePath.getName() + "already exists.", true);
-        }
-        setBuildStatus(createRunResults(resultsFilePath, testsuites));
+
+        File resultsFile = resolveResultsFile();
+
+        createResultsFileIfNeeded(resultsFile);
+
+        setBuildStatus(createRunResults(resultsFile, testsuites));
         provideStepResultStatus(buildStatus);
+
         return BuildStatus.Successful.equals(buildStatus);
+    }
+
+    private File resolveResultsFile() {
+        File fallbackFile = new File(
+                workspace.toString(),
+                artifactsResourceName + File.separator + getJunitResultsFileName()
+        );
+
+        if (output == null || output.toString().isBlank()) {
+            return fallbackFile;
+        }
+
+        File preferredFile = new File(
+                output.toString(),
+                getJunitResultsFileName()
+        );
+
+        File parentDir = preferredFile.getParentFile();
+        if (parentDir != null && (parentDir.exists() || parentDir.mkdirs())) {
+            return preferredFile;
+        }
+
+        LogHelper.log(
+                "Output path not usable (" + output + "), falling back to workspace.",
+                true
+        );
+
+        return fallbackFile;
+    }
+
+    private void createResultsFileIfNeeded(File resultsFile) throws IOException {
+        File parentDir = resultsFile.getParentFile();
+
+        if (parentDir != null && !parentDir.exists()) {
+            parentDir.mkdirs(); // workspace is already verified
+        }
+
+        if (resultsFile.createNewFile()) {
+            LogHelper.log("File created: " + resultsFile.getName(), true);
+        } else {
+            LogHelper.log("File " + resultsFile.getName() + " already exists.", true);
+        }
     }
 
     private void provideStepResultStatus(BuildStatus buildStatus) {
