@@ -148,32 +148,38 @@ Harness users **expect YAML**.
 ## Harness pipeline example
 
 ```yaml
-steps:
-  - step:
-      name: Run LRE Test
-      type: Container
-      spec:
-        image: danieldanan/opentext-enterprise-performance-engineering-test:latest
-        shell: Sh
-        envVariables:
-          PLUGIN_LRE_ACTION: ExecuteLreTest
-          PLUGIN_LRE_DESCRIPTION: running new test
-          PLUGIN_LRE_SERVER: http://<Server>/?tenant=<tenant-id>
-          PLUGIN_LRE_HTTPS_PROTOCOL: false
-          PLUGIN_LRE_AUTHENTICATE_WITH_TOKEN: false
-          PLUGIN_LRE_USERNAME: <+secrets.getValue("lre_username")>
-          PLUGIN_LRE_PASSWORD: <+secrets.getValue("lre_password")>
-          PLUGIN_LRE_DOMAIN: <domain>
-          PLUGIN_LRE_PROJECT: <project>
-          PLUGIN_LRE_TEST: "<testid>"
-          PLUGIN_LRE_TIMESLOT_DURATION_MINUTES: "30"
-          PLUGIN_LRE_POST_RUN_ACTION: Collate and Analyze
-          PLUGIN_LRE_OUTPUT_DIR: /harness/output
-          PLUGIN_LRE_WORKSPACE_DIR: /harness/workspace
-        resources:
-          limits:
-            memory: 2Gi
-            cpu: 1
+...
+            steps:
+              - step:
+                  type: Run
+                  name: Run_1
+                  identifier: Run_1
+                  spec:
+                    connectorRef: DockerRegistry1
+                    image: danieldanan/opentext-enterprise-performance-engineering-test:latest
+                    shell: Sh
+                    envVariables:
+                      PLUGIN_LRE_ACTION: ExecuteLreTest
+                      PLUGIN_LRE_DESCRIPTION: running new test
+                      PLUGIN_LRE_SERVER: <+secrets.getValue("lre_server")>
+                      PLUGIN_LRE_HTTPS_PROTOCOL: "true"
+                      PLUGIN_LRE_AUTHENTICATE_WITH_TOKEN: "false"
+                      PLUGIN_LRE_USERNAME: <+secrets.getValue("lre_username")>
+                      PLUGIN_LRE_PASSWORD: <+secrets.getValue("lre_password")>
+                      PLUGIN_LRE_DOMAIN: <+secrets.getValue("lre_domain")>
+                      PLUGIN_LRE_PROJECT: <+secrets.getValue("lre_project")>
+                      PLUGIN_LRE_TEST: <+secrets.getValue("lre_test")>
+                      PLUGIN_LRE_TIMESLOT_DURATION_HOURS: "0"
+                      PLUGIN_LRE_TIMESLOT_DURATION_MINUTES: "30"
+                      PLUGIN_LRE_POST_RUN_ACTION: Collate and Analyze
+                      PLUGIN_LRE_VUDS_MODE: "false"
+                      PLUGIN_LRE_TREND_REPORT: "5"
+                      PLUGIN_LRE_SEARCH_TIMESLOT: "false"
+                      PLUGIN_LRE_STATUS_BY_SLA: "false"
+                      PLUGIN_LRE_OUTPUT_DIR: /harness/output
+                      PLUGIN_LRE_WORKSPACE_DIR: /harness
+                      PLUGIN_LRE_ENABLE_STACKTRACE: "true"
+...
 ```
 ---
 ## Configuration parameters
