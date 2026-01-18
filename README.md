@@ -220,12 +220,6 @@ This image follows CI/CD plugin best practices:
 - Platform-agnostic execution
 - No CI vendor lock-in
 ---
-## Authors and Acknowledgments
-Developed and maintained by the OpenText Enterprise Performance Engineering team.
-Contributors:
-- Daniel Danan
-Thanks to all contributors, reviewers, and users who helped improve stability, usability, and CI integration.
----
 ## License
 This project is licensed under the MIT License.
 See the [LICENSE](LICENSE) file for details.
