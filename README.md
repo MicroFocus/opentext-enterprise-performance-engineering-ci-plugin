@@ -278,9 +278,9 @@ to allow artifact collection and post-processing.
 Supported authentication modes:
 - Username / password
 - Token authentication by setting:
--- PLUGIN_LRE_AUTHENTICATE_WITH_TOKEN=true
--- PLUGIN_LRE_USERNAME=<Id part of the token>
--- PLUGIN_LRE_PASSWORD=<Secret part of the token>
+  - PLUGIN_LRE_AUTHENTICATE_WITH_TOKEN=true
+  - PLUGIN_LRE_USERNAME=<Id part of the token>
+  - PLUGIN_LRE_PASSWORD=<Secret part of the token>
 
 ---
 ## Troubleshooting

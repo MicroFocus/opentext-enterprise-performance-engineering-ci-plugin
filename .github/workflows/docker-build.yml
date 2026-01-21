@@ -12,17 +12,18 @@ jobs:
 
     env:
       IMAGE_NAME: opentext-enterprise-performance-engineering-test
-      IMAGE_TAG: ${{ github.sha }}
 
     steps:
       # -------------------------------------------------
-      # 1. Checkout repository
+      # 1. Checkout repository (FULL history)
       # -------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # -------------------------------------------------
-      # 2. Set up Python (for test script)
+      # 2. Set up Python
       # -------------------------------------------------
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -33,26 +34,21 @@ jobs:
       # 3. Set up Docker
       # -------------------------------------------------
       - name: Set up Docker Buildx
-        if: success()   # only run if previous steps succeeded
         uses: docker/setup-buildx-action@v3
 
       # -------------------------------------------------
-      # 4. Build intermediate stages (Java & Node)
+      # 4. Build intermediate stages
       # -------------------------------------------------
       - name: Build Java builder stage
-        if: success()   # only run if previous steps succeeded
-        run: |
-          docker build --target java-builder -t java-builder .
+        run: docker build --target java-builder -t java-builder .
 
       - name: Build Node builder stage
-        run: |
-          docker build --target node-builder -t node-builder .
+        run: docker build --target node-builder -t node-builder .
 
       # -------------------------------------------------
       # 5. Extract build artifacts
       # -------------------------------------------------
       - name: Extract Java artifact
-        if: success()   # only run if previous steps succeeded
         run: |
           mkdir -p artifacts/java
           docker create --name temp-java java-builder
@@ -60,7 +56,6 @@ jobs:
           docker rm temp-java
 
       - name: Extract Node artifact
-        if: success()   # only run if previous steps succeeded
         run: |
           mkdir -p artifacts/node
           docker create --name temp-node node-builder
@@ -71,32 +66,35 @@ jobs:
       # 6. Upload artifacts
       # -------------------------------------------------
       - name: Upload Java artifact
-        if: success()   # only run if previous steps succeeded
         uses: actions/upload-artifact@v4
         with:
           name: java-fat-jar-${{ github.sha }}
           path: artifacts/java
 
       - name: Upload Node artifact
-        if: success()   # only run if previous steps succeeded
         uses: actions/upload-artifact@v4
         with:
           name: node-dist-${{ github.sha }}
           path: artifacts/node
 
       # -------------------------------------------------
-      # 7. Read release version
+      # 7. Read release version (SINGLE source of truth)
       # -------------------------------------------------
       - name: Read release version
         run: |
-          IMAGE_TAG=$(cat release/trigger | tr -d '\n')
+          if [ ! -s release/trigger ]; then
+            echo "release/trigger is missing or empty"
+            exit 1
+          fi
+
+          IMAGE_TAG=$(tr -d '[:space:]' < release/trigger)
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
-    
+          echo "Using IMAGE_TAG=$IMAGE_TAG"
+
       # -------------------------------------------------
-      # 8. Build final Docker image (tagged)
+      # 8. Build final Docker image
       # -------------------------------------------------
       - name: Build Docker image
-        if: success()   # only run if previous steps succeeded
         run: |
           docker build \
             -t $IMAGE_NAME:latest \
@@ -107,7 +105,6 @@ jobs:
       # 9. Test Docker image
       # -------------------------------------------------
       - name: Test Docker image
-        if: success()   # only run if previous steps succeeded
         env:
           IMAGE_NAME: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
@@ -137,10 +134,9 @@ jobs:
           python testImage.py
 
       # -------------------------------------------------
-      # 10. Upload test outputs (reports)
+      # 10. Upload test reports
       # -------------------------------------------------
       - name: Upload test reports
-        if: success()   # only run if previous steps succeeded
         uses: actions/upload-artifact@v4
         with:
           name: harness-reports-${{ github.sha }}
@@ -149,44 +145,33 @@ jobs:
             harness/workspace
 
       # -------------------------------------------------
-      # 11. Check if release version changed
+      # 11. Check if release version changed (CORRECT diff)
       # -------------------------------------------------
       - name: Check if release version changed
         id: release_changed
+        if: github.event_name == 'push'
         run: |
-          BEFORE="${{ github.event.before }}"
-          AFTER="${{ github.sha }}"
-
-          # Handle first commit edge case
-          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
-            echo "changed=true" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          if git diff --quiet "$BEFORE" "$AFTER" -- release/trigger; then
+          if git diff --quiet ${{ github.event.before }}..${{ github.sha }} -- release/trigger; then
             echo "changed=false" >> $GITHUB_OUTPUT
           else
             echo "changed=true" >> $GITHUB_OUTPUT
           fi
 
       # -------------------------------------------------
-      # 12. Push Docker image to Docker Hub (only if release/ changed)
+      # 12. Push Docker image (only on version bump)
       # -------------------------------------------------
       - name: Log in to Docker Hub
-        if: ${{ steps.release_changed.outputs.changed == 'true' }}
+        if: github.event_name == 'push' && steps.release_changed.outputs.changed == 'true'
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Push Docker image
-        if: ${{ steps.release_changed.outputs.changed == 'true' }}
+        if: github.event_name == 'push' && steps.release_changed.outputs.changed == 'true'
         run: |
-          # Tag the image with latest and commit SHA
           docker tag $IMAGE_NAME:latest ${{ secrets.DOCKER_USERNAME }}/$IMAGE_NAME:latest
           docker tag $IMAGE_NAME:latest ${{ secrets.DOCKER_USERNAME }}/$IMAGE_NAME:$IMAGE_TAG
 
-          # Push both tags
           docker push ${{ secrets.DOCKER_USERNAME }}/$IMAGE_NAME:latest
           docker push ${{ secrets.DOCKER_USERNAME }}/$IMAGE_NAME:$IMAGE_TAG
-
