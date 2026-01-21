@@ -46,9 +46,9 @@ All configuration is provided **exclusively** via environment variables.
 
 | Variable | Description |
 |--------|-------------|
-| **PLUGIN_LRE_SERVER** | LRE server URL, including optional port and tenant. Default tenant is used if not specified. |
-| **PLUGIN_LRE_USERNAME** | Username (unless token authentication is used) |
-| **PLUGIN_LRE_PASSWORD** | Password (unless token authentication is used) |
+| **PLUGIN_LRE_SERVER** | Server, port (when not mentionned, default is 80 or 433 for secured) and tenant (when not mentionned, default is ?tenant=fa128c06-5436-413d-9cfa-9f04bb738df3). e.g.: myserver.mydomain.com:81/?tenant=fa128c06-5436-413d-9cfa-9f04bb738df3' |
+| **PLUGIN_LRE_USERNAME** | Username (or ID part of token) |
+| **PLUGIN_LRE_PASSWORD** | Password (or secret part of token) |
 | **PLUGIN_LRE_DOMAIN** | Domain (case-sensitive) |
 | **PLUGIN_LRE_PROJECT** | Project (case-sensitive) |
 | **PLUGIN_LRE_TEST** | Test ID **or** relative path to a YAML file defining a new test |
@@ -63,20 +63,20 @@ All configuration is provided **exclusively** via environment variables.
 |--------------------|-------------|---------|
 | **PLUGIN_LRE_ACTION** | Action to execute. Currently supported: `ExecuteLreTest` | `ExecuteLreTest` |
 | **PLUGIN_LRE_DESCRIPTION** | Description displayed in console logs | |
-| **PLUGIN_LRE_HTTPS_PROTOCOL** | Use HTTPS (`true` / `false`) | `false` |
-| **PLUGIN_LRE_AUTHENTICATE_WITH_TOKEN** | Use token authentication (required for SSO) | `false` |
+| **PLUGIN_LRE_HTTPS_PROTOCOL** | Use secured protocol for connecting to the server (`true` / `false`) | `false` |
+| **PLUGIN_LRE_AUTHENTICATE_WITH_TOKEN** | Use token authentication (required for SSO). (`true` / `false`) | `false` |
 | **PLUGIN_LRE_TEST_INSTANCE** | `AUTO` or specific instance ID | `AUTO` |
 | **PLUGIN_LRE_TIMESLOT_DURATION_HOURS** | Timeslot duration (hours) | `0` |
 | **PLUGIN_LRE_TIMESLOT_DURATION_MINUTES** | Timeslot duration (minutes) | `30` |
 | **PLUGIN_LRE_POST_RUN_ACTION** | `Collate Results`, `Collate and Analyze`, `Do Not Collate` | `Do Not Collate` |
-| **PLUGIN_LRE_VUDS_MODE** | Use VUDS licenses | `false` |
-| **PLUGIN_LRE_TREND_REPORT** | Trend report behavior or report ID | |
-| **PLUGIN_LRE_SEARCH_TIMESLOT** | Reuse matching timeslot instead of creating new | `false` |
-| **PLUGIN_LRE_STATUS_BY_SLA** | Report success based on SLA | `false` |
+| **PLUGIN_LRE_VUDS_MODE** | Use VUDS licenses (`true` / `false`) | `false` |
+| **PLUGIN_LRE_TREND_REPORT** |  `ASSOCIATED` - the trend report defined in the test design will be used', Valid report ID - Report ID will be used for trend, No value or not defined - no trend monitoring. | |
+| **PLUGIN_LRE_SEARCH_TIMESLOT** | Experimental: Search for matching timeslot instead of creating a new timeslot (`true` / `false`) | `false` |
+| **PLUGIN_LRE_STATUS_BY_SLA** | Report success based on SLA (`true` / `false`) | `false` |
 | **PLUGIN_LRE_PROXY_OUT_URL** | Proxy URL | |
 | **PLUGIN_LRE_USERNAME_PROXY** | Proxy username | |
 | **PLUGIN_LRE_PASSWORD_PROXY** | Proxy password | |
-| **PLUGIN_LRE_ENABLE_STACKTRACE** | Print stacktrace on errors | `false` |
+| **PLUGIN_LRE_ENABLE_STACKTRACE** | Print stacktrace on errors (`true` / `false`) | `false` |
 
 ---
 
@@ -87,10 +87,6 @@ All configuration is provided **exclusively** via environment variables.
 | **PLUGIN_LRE_OUTPUT_DIR** | Result files and summarized outputs |
 | **PLUGIN_LRE_WORKSPACE_DIR** | Workspace for logs, reports, and checkout |
 
-Defaults:
-- `PLUGIN_LRE_OUTPUT_DIR`: `$HARNESS_STEP_OUTPUTS_PATH` or `$HARNESS_WORKSPACE`
-- `PLUGIN_LRE_WORKSPACE_DIR`: `$HARNESS_WORKSPACE`
-
 These directories **must be writable** and are typically mounted volumes in CI environments.
 
 ---
@@ -98,10 +94,10 @@ These directories **must be writable** and are typically mounted volumes in CI e
 ### Expected Output
 During execution, the condole logs provides the progression (waiting for run to finish, analysis report generation, ...)
 After execution, the plugin writes:
-- `results.xml` – summarized test results
-- `LreResult/` – execution logs (lre_run_test__<date>.log)
-- Optional analysis files if `PLUGIN_LRE_POST_RUN_ACTION` is `Collate and Analyze` (under LreResult/LreReports/HtmlReport)
-- Optional trend report if PLUGIN_LRE_TREND_REPORT is set with existing trend report (and LreResult/LreReports/TrendReports)
+- Under PLUGIN_LRE_OUTPUT_DIR path, the file `results<timestamp>.xml` – summarized test results
+- Under PLUGIN_LRE_WORKSPACE_DIR path, `LreResult/*.*` – execution logs (lre_run_test__<date>.log)
+- Under PLUGIN_LRE_WORKSPACE_DIR path, optional analysis files if `PLUGIN_LRE_POST_RUN_ACTION` is `Collate and Analyze` (under LreResult/LreReports/HtmlReport)
+- Under PLUGIN_LRE_WORKSPACE_DIR path, optional trend report if PLUGIN_LRE_TREND_REPORT is set with existing trend report (and LreResult/LreReports/TrendReports)
 Exit code `0` indicates success; any non-zero value indicates failure.
 
 ---
@@ -117,7 +113,10 @@ Exit code `0` indicates success; any non-zero value indicates failure.
 ## Usage
 
 ### Run Locally with Docker
+Assuming the operating systen can pull docker images and run them as linux container.
 
+#### powershell
+create a ps1 file with the following content (provide valid values to environment variables) and run it:
 ```powershell
 $imageBase = "danieldanan/opentext-enterprise-performance-engineering-test"
 $imageVersion = "latest"
@@ -129,8 +128,8 @@ docker run -it --rm `
   -e PLUGIN_LRE_ACTION="ExecuteLreTest" `
   -e PLUGIN_LRE_DESCRIPTION="running new test" `
   -e PLUGIN_LRE_SERVER="http://<Server>/?tenant=<tenant-id>" `
-  -e PLUGIN_LRE_USERNAME="<lreusername>" `
-  -e PLUGIN_LRE_PASSWORD="<lrepassword>" `
+  -e PLUGIN_LRE_USERNAME="<username>" `
+  -e PLUGIN_LRE_PASSWORD="<password>" `
   -e PLUGIN_LRE_DOMAIN="<domain>" `
   -e PLUGIN_LRE_PROJECT="<project>" `
   -e PLUGIN_LRE_TEST="<testid>" `
@@ -140,12 +139,90 @@ docker run -it --rm `
   $imageName
 ```
 
+#### Python
+create a testImage.py file with following content (provide valid values to parameters in env_vars) and run it.
 
-### Harness pipeline example (this is where many READMEs fail)
+```python
+import subprocess
+from pathlib import Path
 
-Harness users **expect YAML**.
----
-## Harness pipeline example
+# -----------------------------
+# Configurable environment variables
+# -----------------------------
+image_base = "danieldanan/opentext-enterprise-performance-engineering-test"
+image_version = "latest"
+image_name = f"{image_base}:{image_version}"
+
+# Test-specific environment variables
+env_vars = {
+    "PLUGIN_LRE_ACTION": "ExecuteLreTest",
+    "PLUGIN_LRE_DESCRIPTION": "running new test",
+    "PLUGIN_LRE_SERVER": "http://<Server>/?tenant=<tenant-id>",
+    "PLUGIN_LRE_HTTPS_PROTOCOL": "false",
+    "PLUGIN_LRE_AUTHENTICATE_WITH_TOKEN": "false",
+    "PLUGIN_LRE_USERNAME": "<username>",
+    "PLUGIN_LRE_PASSWORD": "<password>",
+    "PLUGIN_LRE_DOMAIN": "<domain>",
+    "PLUGIN_LRE_PROJECT": "<project>",
+    "PLUGIN_LRE_TEST": "<testid>",
+    "PLUGIN_LRE_TEST_INSTANCE": "",
+    "PLUGIN_LRE_TIMESLOT_DURATION_HOURS": "0",
+    "PLUGIN_LRE_TIMESLOT_DURATION_MINUTES": "30",
+    "PLUGIN_LRE_POST_RUN_ACTION": "Collate and Analyze",
+    "PLUGIN_LRE_VUDS_MODE": "false",
+    "PLUGIN_LRE_TREND_REPORT": "5",
+    "PLUGIN_LRE_SEARCH_TIMESLOT": "false",
+    "PLUGIN_LRE_STATUS_BY_SLA": "false",
+    "PLUGIN_LRE_OUTPUT_DIR": "/harness/output",
+    "PLUGIN_LRE_WORKSPACE_DIR": "/harness",
+    "PLUGIN_LRE_ENABLE_STACKTRACE": "false",
+}
+
+
+def windows_path_for_docker(path: str) -> str:
+    """Convert Windows path to Docker-friendly forward slash path"""
+    return Path(path).resolve().as_posix()
+
+
+def run_test_container():
+    print(f"Beginning running a test using container of image {image_name} ...")
+
+    # Docker volume mappings
+    volumes = [
+        f"{path_for_docker('./harness/output')}:{env_vars['PLUGIN_LRE_OUTPUT_DIR']}",
+        f"{path_for_docker('./harness/workspace')}:{env_vars['PLUGIN_LRE_WORKSPACE_DIR']}",
+    ]
+
+    # Build docker run command
+    cmd = ["docker", "run", "-it", "--rm"]
+
+    # Add volume mappings
+    for vol in volumes:
+        cmd += ["-v", vol]
+
+    # Add environment variables
+    for key, value in env_vars.items():
+        cmd += ["-e", f"{key}={value}"]
+
+    # Add image name
+    cmd.append(image_name)
+
+    # Run the docker command
+    print("> Running Docker container...")
+    subprocess.run(cmd, shell=True, check=True)
+
+    print(f"Finished running a test using container of image {image_name} ...")
+
+
+if __name__ == "__main__":
+    run_test_container()
+
+```
+
+### Harness pipeline example
+
+Harness users **expect YAML** as step (the value of connectorRef should be customized to your harness configuation).
+values can be stored as secrets in harness and referenced.
 
 ```yaml
 ...
@@ -178,15 +255,15 @@ Harness users **expect YAML**.
                       PLUGIN_LRE_STATUS_BY_SLA: "false"
                       PLUGIN_LRE_OUTPUT_DIR: /harness/output
                       PLUGIN_LRE_WORKSPACE_DIR: /harness
-                      PLUGIN_LRE_ENABLE_STACKTRACE: "true"
+                      PLUGIN_LRE_ENABLE_STACKTRACE: "false"
 ...
 ```
----
-## Configuration parameters
+
+### Configuration parameters
 
 All configuration is provided using environment variables.
 
-## Output
+### Output
 
 The plugin writes execution logs and result files to:
 
@@ -200,12 +277,14 @@ to allow artifact collection and post-processing.
 
 Supported authentication modes:
 - Username / password
-- Token-based authentication (required when SSO is enabled)
-Enable token authentication by setting:
-PLUGIN_LRE_AUTHENTICATE_WITH_TOKEN=true
+- Token authentication by setting:
+-- PLUGIN_LRE_AUTHENTICATE_WITH_TOKEN=true
+-- PLUGIN_LRE_USERNAME=<Id part of the token>
+-- PLUGIN_LRE_PASSWORD=<Secret part of the token>
+
 ---
 ## Troubleshooting
-- Ensure network connectivity from the container to the LRE server
+- Ensure network connectivity from the container to the server
 - Validate tenant ID, domain, and project values
 - Verify credentials or token permissions
 - Enable stack traces by setting:
@@ -217,14 +296,6 @@ PLUGIN_LRE_AUTHENTICATE_WITH_TOKEN=true
 This plugin uses the same core logic and configuration model as:
 - GitHub Action: https://github.com/MicroFocus/lre-gh-action
 - GitLab CI Plugin: https://gitlab.com/loadrunner-enterprise/lre-gitlab-action
----
-## Design Goals
-This image follows CI/CD plugin best practices:
-- Declarative configuration
-- Environment-variable contract
-- Deterministic exit codes
-- Platform-agnostic execution
-- No CI vendor lock-in
 ---
 ## License
 This project is licensed under the MIT License.
