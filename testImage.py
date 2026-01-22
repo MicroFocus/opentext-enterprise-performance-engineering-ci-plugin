@@ -5,7 +5,7 @@ from pathlib import Path
 # -----------------------------
 # Docker image metadata
 # -----------------------------
-image_name = os.getenv("IMAGE_NAME", "opentext-enterprise-performance-engineering-test:latest")
+image_name = os.getenv("IMAGE_NAME", "opentext-enterprise-performance-engineering-ci-plugin:latest")
 
 # -----------------------------
 # Environment variables

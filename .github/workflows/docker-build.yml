@@ -11,7 +11,8 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      IMAGE_NAME: opentext-enterprise-performance-engineering-test
+      IMAGE_REPO: performancetesting
+      IMAGE_NAME: opentext-enterprise-performance-engineering-ci-plugin
 
     steps:
       # -------------------------------------------------
@@ -170,8 +171,8 @@ jobs:
       - name: Push Docker image
         if: github.event_name == 'push' && steps.release_changed.outputs.changed == 'true'
         run: |
-          docker tag $IMAGE_NAME:latest ${{ secrets.DOCKER_USERNAME }}/$IMAGE_NAME:latest
-          docker tag $IMAGE_NAME:latest ${{ secrets.DOCKER_USERNAME }}/$IMAGE_NAME:$IMAGE_TAG
+          docker tag $IMAGE_NAME:latest $IMAGE_REPO/$IMAGE_NAME:latest
+          docker tag $IMAGE_NAME:latest $IMAGE_REPO/$IMAGE_NAME:$IMAGE_TAG
 
-          docker push ${{ secrets.DOCKER_USERNAME }}/$IMAGE_NAME:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/$IMAGE_NAME:$IMAGE_TAG
+          docker push $IMAGE_REPO/$IMAGE_NAME:latest
+          docker push $IMAGE_REPO/$IMAGE_NAME:$IMAGE_TAG
