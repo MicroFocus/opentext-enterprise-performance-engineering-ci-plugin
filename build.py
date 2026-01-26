@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # -----------------------------
 # Configurable image metadata
 # -----------------------------
-IMAGE_BASE = "lre-harness-node-java-app"
+IMAGE_BASE = "opentext-enterprise-performance-engineering-ci-plugin"
 IMAGE_VERSION = "1.0"
 IMAGE_NAME = f"{IMAGE_BASE}:{IMAGE_VERSION}"
 

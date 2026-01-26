@@ -5,11 +5,11 @@ FROM maven:3.9.10-eclipse-temurin-17 AS java-builder
 WORKDIR /build/java-app
 
 # Copy pom and pre-download dependencies
-COPY java-app/pom.xml . 
+COPY java-app/pom.xml .
 RUN mvn dependency:go-offline
 
 # Copy source and build JAR
-COPY java-app . 
+COPY java-app .
 RUN mvn clean package -DskipTests
 
 # ------------------------
@@ -18,30 +18,28 @@ RUN mvn clean package -DskipTests
 FROM node:20 AS node-builder
 WORKDIR /build/nodejs-app
 
-COPY nodejs-app/package*.json . 
+COPY nodejs-app/package*.json .
 RUN npm install
 
-COPY nodejs-app . 
+COPY nodejs-app .
 RUN npx tsc
 
 # ------------------------
-# Java runtime (jlink custom JRE)
+# Java runtime (TLS-safe full JRE)
 # ------------------------
-FROM eclipse-temurin:17-jdk AS jre-builder
-
-# Build a custom Java runtime including modules likely needed
-RUN jlink \
-    --add-modules java.base,java.compiler,java.desktop,java.instrument,java.logging,java.management,java.naming,java.net.http,java.scripting,java.sql,java.xml \
-    --strip-debug \
-    --no-man-pages \
-    --no-header-files \
-    --compress=2 \
-    --output /jre
+FROM eclipse-temurin:17-jre AS jre-builder
 
 # ------------------------
-# Runtime image (Node + custom Java runtime)
+# Runtime image (Node + Java)
 # ------------------------
 FROM node:20-slim
+
+# ------------------------
+# System dependencies
+# ------------------------
+RUN apt-get update \
+ && apt-get install -y ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
 
 # ------------------------
 # Metadata & Environment
@@ -60,7 +58,7 @@ WORKDIR /app
 # ------------------------
 # Copy Java and Node artifacts
 # ------------------------
-COPY --from=jre-builder /jre /opt/jre
+COPY --from=jre-builder /opt/java/openjdk /opt/jre
 COPY --from=node-builder /build/nodejs-app/dist /app/dist
 COPY --from=java-builder /build/java-app/target/*-jar-with-dependencies.jar /app/dist
 
