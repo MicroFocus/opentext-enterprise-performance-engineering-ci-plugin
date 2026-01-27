@@ -118,7 +118,7 @@ Assuming the operating systen can pull docker images and run them as linux conta
 #### powershell
 create a ps1 file with the following content (provide valid values to environment variables) and run it:
 ```powershell
-$imageBase = "danieldanan/opentext-enterprise-performance-engineering-test"
+$imageBase = "performancetesting/opentext-enterprise-performance-engineering-ci-plugin"
 $imageVersion = "latest"
 $imageName = "${imageBase}:${imageVersion}"
 
@@ -149,7 +149,7 @@ from pathlib import Path
 # -----------------------------
 # Configurable environment variables
 # -----------------------------
-image_base = "danieldanan/opentext-enterprise-performance-engineering-test"
+image_base = "performancetesting/opentext-enterprise-performance-engineering-ci-plugin"
 image_version = "latest"
 image_name = f"{image_base}:{image_version}"
 
@@ -233,7 +233,7 @@ values can be stored as secrets in harness and referenced.
                   identifier: Run_1
                   spec:
                     connectorRef: DockerRegistry1
-                    image: danieldanan/opentext-enterprise-performance-engineering-test:latest
+                    image: performancetesting/opentext-enterprise-performance-engineering-ci-plugin:latest
                     shell: Sh
                     envVariables:
                       PLUGIN_LRE_ACTION: ExecuteLreTest
