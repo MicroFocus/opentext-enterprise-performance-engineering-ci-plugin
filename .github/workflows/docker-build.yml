@@ -93,6 +93,33 @@ jobs:
           echo "Using IMAGE_TAG=$IMAGE_TAG"
 
       # -------------------------------------------------
+      # 7b. Package Harness plugin ZIP
+      # -------------------------------------------------
+      - name: Package Harness Plugin ZIP
+        run: |
+          PLUGIN_DIR="nodejs-opentext-plugin-step-for-harness"
+          ZIP_NAME="${{ env.IMAGE_NAME }}-${{ env.IMAGE_TAG }}.zip"
+
+          if [ -d "$PLUGIN_DIR" ]; then
+            echo "Zipping contents of $PLUGIN_DIR into $ZIP_NAME..."
+            cd $PLUGIN_DIR
+            zip -r ../$ZIP_NAME *
+            cd ..
+            echo "ZIP created: $ZIP_NAME"
+          else
+            echo "Folder $PLUGIN_DIR does not exist, skipping ZIP creation."
+          fi
+
+      # -------------------------------------------------
+      # 7c. Upload Harness plugin ZIP artifact
+      # -------------------------------------------------
+      - name: Upload Harness plugin ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: harness-plugin-${{ env.IMAGE_TAG }}
+          path: ${{ env.IMAGE_NAME }}-${{ env.IMAGE_TAG }}.zip
+          
+      # -------------------------------------------------
       # 8. Build final Docker image
       # -------------------------------------------------
       - name: Build Docker image

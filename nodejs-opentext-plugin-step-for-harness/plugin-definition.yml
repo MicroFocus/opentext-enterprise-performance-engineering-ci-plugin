@@ -1,0 +1,136 @@
+name: OpenText Enterprise Performance Engineering Ci Plugin
+type: Step
+identifier: opentext_enterprise_performance_engineering_ci_plugin
+description: Run OpenText Enterprise Performance Engineering load test
+icon: icon.png
+category: Build/Performance
+
+inputParameters:
+  - name: LRE_ACTION
+    type: String
+    description: Action to execute
+    required: false
+    allowedValues:
+      - ExecuteLreTest
+
+  - name: LRE_DESCRIPTION
+    type: String
+    description: Description displayed in console logs
+    required: false
+
+  - name: LRE_SERVER
+    type: String
+    description: OpenText LoadRunner Enterprise server URL
+    required: true
+
+  - name: LRE_HTTPS_PROTOCOL
+    type: Boolean
+    description: Use secured protocol for connecting to the server
+    required: false
+
+  - name: LRE_USERNAME
+    type: String
+    description: Username
+    required: true
+
+  - name: LRE_PASSWORD
+    type: Secret
+    description: Password
+    required: true
+
+  - name: LRE_AUTHENTICATE_WITH_TOKEN
+    type: Boolean
+    description: Use token authentication (required for SSO)
+    required: false
+
+  - name: LRE_DOMAIN
+    type: String
+    description: Domain (case-sensitive)
+    required: true
+
+  - name: LRE_PROJECT
+    type: String
+    description: Project (case-sensitive)
+    required: true
+
+  - name: LRE_TEST
+    type: String
+    description: Test ID or relative path to a YAML file defining a new test
+    required: true
+
+  - name: LRE_TEST_INSTANCE
+    type: String
+    description: AUTO (default) or specific instance ID
+    required: false
+
+  - name: LRE_TIMESLOT_DURATION_HOURS
+    type: Number
+    description: Timeslot duration in hours
+    required: false
+
+  - name: LRE_TIMESLOT_DURATION_MINUTES
+    type: Number
+    description: Timeslot duration in minutes
+    required: false
+
+  - name: LRE_POST_RUN_ACTION
+    type: String
+    description: Post run action
+    required: false
+    allowedValues:
+      - Do Not Collate
+      - Collate Results
+      - Collate and Analyze
+
+  - name: LRE_VUDS_MODE
+    type: Boolean
+    description: Use VUDS licenses
+    required: false
+
+  - name: LRE_TREND_REPORT
+    type: String
+    description: >
+      Trend report to use.
+      ASSOCIATED uses the report defined in the test design.
+      Ignored when LRE_POST_RUN_ACTION is set to Do Not Collate.
+    required: false
+
+  - name: LRE_SEARCH_TIMESLOT
+    type: Boolean
+    description: Search for a matching timeslot instead of creating a new one (experimental)
+    required: false
+
+  - name: LRE_STATUS_BY_SLA
+    type: Boolean
+    description: Report success based on SLA
+    required: false
+
+  - name: LRE_PROXY_OUT_URL
+    type: String
+    description: Proxy URL
+    required: false
+
+  - name: LRE_USERNAME_PROXY
+    type: String
+    description: Proxy username
+    required: false
+
+  - name: LRE_PASSWORD_PROXY
+    type: Secret
+    description: Proxy password
+    required: false
+
+  - name: LRE_ENABLE_STACKTRACE
+    type: Boolean
+    description: Print stacktrace on errors
+    required: false
+
+  - name: LRE_OUTPUT_DIR
+    type: String
+    description: Directory for result files and summarized outputs
+    required: false
+
+  - name: LRE_WORKSPACE_DIR
+    type: String
+    description: Workspace for logs, reports, and checkout
+    required: false
