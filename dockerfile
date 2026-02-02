@@ -66,7 +66,7 @@ COPY --from=java-builder /build/java-app/target/*-jar-with-dependencies.jar /app
 # Harness defaults
 # ------------------------
 ENV PLUGIN_LRE_OUTPUT_DIR="/harness/output"
-ENV PLUGIN_LRE_WORKSPACE_DIR="/harness/workspace"
+ENV PLUGIN_LRE_WORKSPACE_DIR="/harness"
 
 # ------------------------
 # Run as non-root user
