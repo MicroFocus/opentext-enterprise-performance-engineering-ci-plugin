@@ -97,8 +97,8 @@ def run_test_container():
         )
 
     volumes = [
-        f"{'C:/temp/harness/output'}:{env_vars['PLUGIN_LRE_OUTPUT_DIR']}",
-        f"{'C:/Git/plugin/jenkins-sync'}:{env_vars['PLUGIN_LRE_WORKSPACE_DIR']}",
+        f"{path_for_docker('./harness/output')}:{env_vars['PLUGIN_LRE_OUTPUT_DIR']}",
+        f"{path_for_docker('./harness/workspace')}:{env_vars['PLUGIN_LRE_WORKSPACE_DIR']}",
     ]
 
     cmd = ["docker", "run", "--rm"]
