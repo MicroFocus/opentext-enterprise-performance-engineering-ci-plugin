@@ -12,7 +12,7 @@ The docker image is designed to run **non-interactively** inside CI/CD pipelines
 
 ## What This Plugin Does
 
-At runtime, the container:
+### **ExecuteLreTest** action - Execute load tests on LRE. At runtime, the container:
 
 1. Authenticates with an OpenText Enterprise Performance Engineering server
 2. Triggers a performance test execution
@@ -23,6 +23,24 @@ At runtime, the container:
 7. Exits with a deterministic status code suitable for pipeline gating
 
 This behavior allows the plugin to be used as a **pipeline quality gate**.
+
+
+### **WorkspaceSync** action (Technology Preview) - Synchronize local workspace scripts to LRE. At runtime, the container:
+
+1. Authenticates with an OpenText Enterprise Performance Engineering server
+2. Scans the workspace for folders considered as supported scripts. Folders identified as scripts are:
+    * VuGen scripts: folders containing a .usr file
+    * JMeter scripts: folders containing a .jmx file
+    * Gatling scripts: folders containing a .scala file
+    * Selenium or unit test scripts: folders containing a .java file
+    * DevWeb scripts: folders containing both main.js AND rts.yml files
+3. Zips each folder identified as script and uploads it to LRE
+4. Failure handling:
+    * If 5 consecutive script uploads fail, the action is interrupted with failure
+    * If more than 50% of the scripts found in the workspace are uploaded successfully, the action reports success
+    * Otherwise, the action reports failure
+5. Writes logs for each upload in console and in workspace
+6. Exits with a deterministic status code suitable for pipeline gating
 
 ---
 
@@ -44,14 +62,14 @@ All configuration is provided **exclusively** via environment variables.
 
 #### Required Inputs
 
-| Variable | Description |
-|--------|-------------|
-| **PLUGIN_LRE_SERVER** | Server, port (when not mentionned, default is 80 or 433 for secured) and tenant (when not mentionned, default is ?tenant=fa128c06-5436-413d-9cfa-9f04bb738df3). e.g.: myserver.mydomain.com:81/?tenant=fa128c06-5436-413d-9cfa-9f04bb738df3' |
-| **PLUGIN_LRE_USERNAME** | Username (or ID part of token) |
-| **PLUGIN_LRE_PASSWORD** | Password (or secret part of token) |
-| **PLUGIN_LRE_DOMAIN** | Domain (case-sensitive) |
-| **PLUGIN_LRE_PROJECT** | Project (case-sensitive) |
-| **PLUGIN_LRE_TEST** | Test ID **or** relative path to a YAML file defining a new test |
+| Variable | Description | Relevant to action |
+|----------|-------------|--------------------|
+| **PLUGIN_LRE_SERVER** | Server, port (when not mentionned, default is 80 or 433 for secured) and tenant (when not mentionned, default is ?tenant=fa128c06-5436-413d-9cfa-9f04bb738df3). e.g.: myserver.mydomain.com:81/?tenant=fa128c06-5436-413d-9cfa-9f04bb738df3' | all actions |
+| **PLUGIN_LRE_USERNAME** | Username (or ID part of token) | all actions |
+| **PLUGIN_LRE_PASSWORD** | Password (or secret part of token) | all actions |
+| **PLUGIN_LRE_DOMAIN** | Domain (case-sensitive) | all actions |
+| **PLUGIN_LRE_PROJECT** | Project (case-sensitive) | all actions |
+| **PLUGIN_LRE_TEST** | Test ID **or** relative path to a YAML file defining a new test | `ExecuteLreTest` |
 
 \* Either username/password **or** token authentication must be used.
 
@@ -59,24 +77,25 @@ All configuration is provided **exclusively** via environment variables.
 
 #### Optional & Advanced Inputs
 
-| Environment Variable | Description | Default |
-|--------------------|-------------|---------|
-| **PLUGIN_LRE_ACTION** | Action to execute. Currently supported: `ExecuteLreTest` | `ExecuteLreTest` |
-| **PLUGIN_LRE_DESCRIPTION** | Description displayed in console logs | |
-| **PLUGIN_LRE_HTTPS_PROTOCOL** | Use secured protocol for connecting to the server (`true` / `false`) | `false` |
-| **PLUGIN_LRE_AUTHENTICATE_WITH_TOKEN** | Use token authentication (required for SSO). (`true` / `false`) | `false` |
-| **PLUGIN_LRE_TEST_INSTANCE** | `AUTO` or specific instance ID | `AUTO` |
-| **PLUGIN_LRE_TIMESLOT_DURATION_HOURS** | Timeslot duration (hours) | `0` |
-| **PLUGIN_LRE_TIMESLOT_DURATION_MINUTES** | Timeslot duration (minutes) | `30` |
-| **PLUGIN_LRE_POST_RUN_ACTION** | `Collate Results`, `Collate and Analyze`, `Do Not Collate` | `Do Not Collate` |
-| **PLUGIN_LRE_VUDS_MODE** | Use VUDS licenses (`true` / `false`) | `false` |
-| **PLUGIN_LRE_TREND_REPORT** |  `ASSOCIATED` - the trend report defined in the test design will be used', Valid report ID - Report ID will be used for trend, No value or not defined - no trend monitoring. | |
-| **PLUGIN_LRE_SEARCH_TIMESLOT** | Experimental: Search for matching timeslot instead of creating a new timeslot (`true` / `false`) | `false` |
-| **PLUGIN_LRE_STATUS_BY_SLA** | Report success based on SLA (`true` / `false`) | `false` |
-| **PLUGIN_LRE_PROXY_OUT_URL** | Proxy URL | |
-| **PLUGIN_LRE_USERNAME_PROXY** | Proxy username | |
-| **PLUGIN_LRE_PASSWORD_PROXY** | Proxy password | |
-| **PLUGIN_LRE_ENABLE_STACKTRACE** | Print stacktrace on errors (`true` / `false`) | `false` |
+| Environment Variable | Description | Default | Relevant to action |
+|----------------------|-------------|---------|--------------------|
+| **PLUGIN_LRE_ACTION** | Action to execute. Currently supported: `ExecuteLreTest` | `ExecuteLreTest` | all actions |
+| **PLUGIN_LRE_DESCRIPTION** | Description displayed in console logs | value of PLUGIN_LRE_ACTION | all actions |
+| **PLUGIN_LRE_HTTPS_PROTOCOL** | Use secured protocol for connecting to the server (`true` / `false`) | `false` | all actions |
+| **PLUGIN_LRE_AUTHENTICATE_WITH_TOKEN** | Use token authentication (required for SSO). (`true` / `false`) | `false` | all actions |
+| **PLUGIN_LRE_TEST_INSTANCE** | `AUTO` or specific instance ID | `AUTO` | `ExecuteLreTest` |
+| **PLUGIN_LRE_TIMESLOT_DURATION_HOURS** | Timeslot duration (hours) | `0` | `ExecuteLreTest` |
+| **PLUGIN_LRE_TIMESLOT_DURATION_MINUTES** | Timeslot duration (minutes) | `30` | `ExecuteLreTest` |
+| **PLUGIN_LRE_POST_RUN_ACTION** | `Collate Results`, `Collate and Analyze`, `Do Not Collate` | `Do Not Collate` | `ExecuteLreTest` |
+| **PLUGIN_LRE_VUDS_MODE** | Use VUDS licenses (`true` / `false`) | `false` | `ExecuteLreTest` |
+| **PLUGIN_LRE_TREND_REPORT** |  `ASSOCIATED` - the trend report defined in the test design will be used', Valid report ID - Report ID will be used for trend, No value or not defined - no trend monitoring. | | `ExecuteLreTest` |
+| **PLUGIN_LRE_SEARCH_TIMESLOT** | Experimental: Search for matching timeslot instead of creating a new timeslot (`true` / `false`) | `false` | `ExecuteLreTest` |
+| **PLUGIN_LRE_STATUS_BY_SLA** | Report success based on SLA (`true` / `false`) | `false` | `ExecuteLreTest` |
+| **PLUGIN_LRE_PROXY_OUT_URL** | Proxy URL | | all actions |
+| **PLUGIN_LRE_USERNAME_PROXY** | Proxy username | | all actions |
+| **PLUGIN_LRE_PASSWORD_PROXY** | Proxy password | | all actions |
+| **PLUGIN_LRE_ENABLE_STACKTRACE** | Print stacktrace on errors (`true` / `false`) | `false` | all actions |
+| **PLUGIN_LRE_RUNTIME_ONLY** | Scripts upload mode (Runtime files only for true, All files for false) (`true` / `false`) | `false` | `WorkspaceSync` |
 
 ---
 
@@ -116,7 +135,7 @@ Exit code `0` indicates success; any non-zero value indicates failure.
 Assuming the operating systen can pull docker images and run them as linux container.
 
 #### powershell
-create a ps1 file with the following content (provide valid values to environment variables) and run it:
+##### create a ps1 file with the following content (provide valid values to environment variables) and run it to execute a test:
 ```powershell
 $imageBase = "performancetesting/opentext-enterprise-performance-engineering-ci-plugin"
 $imageVersion = "latest"
@@ -139,8 +158,30 @@ docker run -it --rm `
   $imageName
 ```
 
+##### create a ps1 file with the following content (provide valid values to environment variables) and run it to sync a workspace (upload folders recognized as scripts in the workspace into LRE ):
+```powershell
+$imageBase = "performancetesting/opentext-enterprise-performance-engineering-ci-plugin"
+$imageVersion = "latest"
+$imageName = "${imageBase}:${imageVersion}"
+
+docker run -it --rm `
+  -v C:/temp/harness/output:/harness/output `
+  -v C:/temp/harness/workspace:/harness/workspace `
+  -e PLUGIN_LRE_ACTION="WorkspaceSync" `
+  -e PLUGIN_LRE_DESCRIPTION="Syncing scripts from workspace to LRE" `
+  -e PLUGIN_LRE_SERVER="http://<Server>/?tenant=<tenant-id>" `
+  -e PLUGIN_LRE_USERNAME="<username>" `
+  -e PLUGIN_LRE_PASSWORD="<password>" `
+  -e PLUGIN_LRE_DOMAIN="<domain>" `
+  -e PLUGIN_LRE_PROJECT="<project>" `
+  -e PLUGIN_LRE_OUTPUT_DIR="/harness/output" `
+  -e PLUGIN_LRE_WORKSPACE_DIR="/harness/workspace" `
+  -e PLUGIN_LRE_RUNTIME_ONLY="true"
+  $imageName
+```
+
 #### Python
-create a testImage.py file with following content (provide valid values to parameters in env_vars) and run it.
+##### create a testImage.py file with following content (provide valid values to parameters in env_vars) and run it.
 
 ```python
 import subprocess
@@ -189,6 +230,77 @@ def run_test_container():
 
     # Docker volume mappings
     volumes = [
+        f"{windows_path_for_docker('./harness/output')}:{env_vars['PLUGIN_LRE_OUTPUT_DIR']}",
+        f"{windows_path_for_docker('./harness/workspace')}:{env_vars['PLUGIN_LRE_WORKSPACE_DIR']}",
+    ]
+
+    # Build docker run command
+    cmd = ["docker", "run", "-it", "--rm"]
+
+    # Add volume mappings
+    for vol in volumes:
+        cmd += ["-v", vol]
+
+    # Add environment variables
+    for key, value in env_vars.items():
+        cmd += ["-e", f"{key}={value}"]
+
+    # Add image name
+    cmd.append(image_name)
+
+    # Run the docker command
+    print("> Running Docker container...")
+    subprocess.run(cmd, shell=True, check=True)
+
+    print(f"Finished running a test using container of image {image_name} ...")
+
+
+if __name__ == "__main__":
+    run_test_container()
+
+```
+
+##### create a testImage.py file with following content (provide valid values to parameters in env_vars) and run it.
+
+```python
+import subprocess
+from pathlib import Path
+
+# -----------------------------
+# Configurable environment variables
+# -----------------------------
+image_base = "performancetesting/opentext-enterprise-performance-engineering-ci-plugin"
+image_version = "latest"
+image_name = f"{image_base}:{image_version}"
+
+# Test-specific environment variables
+env_vars = {
+    "PLUGIN_LRE_ACTION": "WorkspaceSync",
+    "PLUGIN_LRE_DESCRIPTION": "Sync scripts from workspace to LRE",
+    "PLUGIN_LRE_SERVER": "http://<Server>/?tenant=<tenant-id>",
+    "PLUGIN_LRE_HTTPS_PROTOCOL": "false",
+    "PLUGIN_LRE_AUTHENTICATE_WITH_TOKEN": "false",
+    "PLUGIN_LRE_USERNAME": "<username>",
+    "PLUGIN_LRE_PASSWORD": "<password>",
+    "PLUGIN_LRE_DOMAIN": "<domain>",
+    "PLUGIN_LRE_PROJECT": "<project>",
+    "PLUGIN_LRE_OUTPUT_DIR": "/harness/output",
+    "PLUGIN_LRE_WORKSPACE_DIR": "/harness",
+    "PLUGIN_LRE_ENABLE_STACKTRACE": "false",
+    "PLUGIN_LRE_RUNTIME_ONLY": "true"
+}
+
+
+def windows_path_for_docker(path: str) -> str:
+    """Convert Windows path to Docker-friendly forward slash path"""
+    return Path(path).resolve().as_posix()
+
+
+def run_test_container():
+    print(f"Beginning running a test using container of image {image_name} ...")
+
+    # Docker volume mappings
+    volumes = [
         f"{path_for_docker('./harness/output')}:{env_vars['PLUGIN_LRE_OUTPUT_DIR']}",
         f"{path_for_docker('./harness/workspace')}:{env_vars['PLUGIN_LRE_WORKSPACE_DIR']}",
     ]
@@ -224,6 +336,8 @@ if __name__ == "__main__":
 Harness users **expect YAML** as step (the value of connectorRef should be customized to your harness configuation).
 values can be stored as secrets in harness and referenced.
 
+#### Example of step to trigger a test execution
+
 ```yaml
 ...
             steps:
@@ -258,7 +372,35 @@ values can be stored as secrets in harness and referenced.
                       PLUGIN_LRE_ENABLE_STACKTRACE: "false"
 ...
 ```
+#### Example of step to sync folders identified as scripts in the workspace to LRE
 
+```yaml
+...
+            steps:
+              - step:
+                  type: Run
+                  name: Run_1
+                  identifier: Run_1
+                  spec:
+                    connectorRef: DockerRegistry1
+                    image: performancetesting/opentext-enterprise-performance-engineering-ci-plugin:latest
+                    shell: Sh
+                    envVariables:
+                      PLUGIN_LRE_ACTION: WorkspaceSync
+                      PLUGIN_LRE_DESCRIPTION: Sync scripts from workspace to LRE
+                      PLUGIN_LRE_SERVER: <+secrets.getValue("lre_server")>
+                      PLUGIN_LRE_HTTPS_PROTOCOL: "true"
+                      PLUGIN_LRE_AUTHENTICATE_WITH_TOKEN: "false"
+                      PLUGIN_LRE_USERNAME: <+secrets.getValue("lre_username")>
+                      PLUGIN_LRE_PASSWORD: <+secrets.getValue("lre_password")>
+                      PLUGIN_LRE_DOMAIN: <+secrets.getValue("lre_domain")>
+                      PLUGIN_LRE_PROJECT: <+secrets.getValue("lre_project")>
+                      PLUGIN_LRE_OUTPUT_DIR: /harness/output
+                      PLUGIN_LRE_WORKSPACE_DIR: /harness
+                      PLUGIN_LRE_ENABLE_STACKTRACE: "false"
+                      PLUGIN_LRE_RUNTIME_ONLY: "true"
+...
+```
 ### Configuration parameters
 
 All configuration is provided using environment variables.

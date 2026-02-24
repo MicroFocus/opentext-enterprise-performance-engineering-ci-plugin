@@ -8,7 +8,7 @@ const validateEnvVars = () => {
   const requiredEnvVars = [
     'PLUGIN_LRE_SERVER', 'PLUGIN_LRE_DOMAIN', 
     'PLUGIN_LRE_USERNAME', 'PLUGIN_LRE_PASSWORD',
-    'PLUGIN_LRE_PROJECT', 'PLUGIN_LRE_TEST'
+    'PLUGIN_LRE_PROJECT'
   ];
 
   requiredEnvVars.forEach(envVar => {
@@ -51,6 +51,7 @@ let lreStatusBySla: boolean = process.env.PLUGIN_LRE_STATUS_BY_SLA === 'true';
 let lreWorkspaceDir = process.env.PLUGIN_LRE_WORKSPACE_DIR ?? process.env.HARNESS_WORKSPACE;
 let lreOutputDir = process.env.PLUGIN_LRE_OUTPUT_DIR ?? process.env.HARNESS_STEP_OUTPUTS_PATH ?? lreWorkspaceDir;
 let lreEnableStacktrace: boolean = process.env.PLUGIN_LRE_ENABLE_STACKTRACE === 'true';
+let lreRuntimeOnly: boolean = process.env.PLUGIN_LRE_RUNTIME_ONLY === 'true';
 
 // Workspace directory in container
 
@@ -63,7 +64,7 @@ const validateInputVars = () => {
 	  
 	  // Validate 'lre_description' parameter
 	  if (!lreDescription) {
-		  lreDescription = 'Executing LRE test';
+		  lreDescription = lreAction;
 	  }
 	  
 	  // Validate 'lre_server' parameter
@@ -102,7 +103,7 @@ const validateInputVars = () => {
 	  }
 	  
 	  // Validate 'lre_test' parameter
-	  if (!lreTest) {
+	  if (!lreTest && lreAction === 'ExecuteLreTest') {
 		  throw new Error(`lre_test variable is not set.`);
 	  }
 	  
@@ -177,6 +178,11 @@ const validateInputVars = () => {
 	  if (lreEnableStacktrace !== true && lreEnableStacktrace !== false) {
 		  lreEnableStacktrace = false;
 	  }
+	  
+	  // Validate 'lre_runtime_only' parameter
+	  if (lreRuntimeOnly !== true && lreRuntimeOnly !== false) {
+		  lreRuntimeOnly = false;
+	  }
 };
 
 
@@ -201,7 +207,8 @@ const config = {
   lre_status_by_sla: lreStatusBySla,
   lre_output_dir: lreOutputDir,
   lre_workspace_dir: lreWorkspaceDir,
-  lre_enable_stacktrace: lreEnableStacktrace
+  lre_enable_stacktrace: lreEnableStacktrace,
+  lre_runtime_only : lreRuntimeOnly
 };
 
 const writeConfigFile = async () => {
@@ -237,6 +244,7 @@ const triggerJavaJarApp = (configFilePath: string) => {
     const javaAppCommand = 'java';
     const javaAppArgs = [
         '-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager',
+        `-Dlog4j.configurationFile=jar:file:///${jarFilePath.replace(/\\/g, '/')}!/log4j2.xml`,
         '-jar',
         jarFilePath,
         configFilePath

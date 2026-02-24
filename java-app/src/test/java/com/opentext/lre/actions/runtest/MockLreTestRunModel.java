@@ -1,7 +1,7 @@
 package com.opentext.lre.actions.runtest;
 
 import com.microfocus.adm.performancecenter.plugins.common.pcentities.PostRunAction;
-import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
 
 public class MockLreTestRunModel  extends LreTestRunModel {
     public MockLreTestRunModel(String serverAndPort,

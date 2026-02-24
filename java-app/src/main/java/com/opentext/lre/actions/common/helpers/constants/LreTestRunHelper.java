@@ -1,5 +1,6 @@
 package com.opentext.lre.actions.common.helpers.constants;
 
+import com.opentext.lre.actions.common.helpers.utils.LogHelper;
 import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
@@ -14,6 +15,8 @@ import java.util.zip.ZipInputStream;
 import java.nio.file.Files;
 
 public class LreTestRunHelper {
+    // Static field to control stack trace output - set based on lre_enable_stacktrace configuration
+    public static boolean ENABLE_STACKTRACE = false;
 
     public LreTestRunHelper() {
     }
@@ -91,7 +94,12 @@ public class LreTestRunHelper {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            // Log error. Print stack trace only if lre_enable_stacktrace is true
+            LogHelper.log("Failed to extract archive: %s", true, e.getMessage());
+            if (ENABLE_STACKTRACE) {
+                e.printStackTrace();
+            }
+            LogHelper.logStackTrace(e);
         }
     }
 

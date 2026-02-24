@@ -58,8 +58,8 @@ public class LreTestRunClient {
     }
 
     public <T extends PcRestProxy> LreTestRunClient(LreTestRunModel lreTestRunModel, /*PrintStream logger,*/ T proxy) {
-        lreTestRunModel = lreTestRunModel;
-        restProxy = proxy;
+        this.lreTestRunModel = lreTestRunModel;
+        this.restProxy = proxy;
     }
 
     public boolean login() {

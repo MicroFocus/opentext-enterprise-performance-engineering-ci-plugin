@@ -4,10 +4,14 @@ import com.microfocus.adm.performancecenter.plugins.common.pcentities.*;
 import com.opentext.lre.actions.common.helpers.LocalizationManager;
 import com.opentext.lre.actions.common.helpers.constants.LreTestRunHelper;
 import com.opentext.lre.actions.common.helpers.result.model.junit.Error;
+import com.opentext.lre.actions.common.helpers.result.model.junit.Failure;
+import com.opentext.lre.actions.common.helpers.result.model.junit.JUnitTestCaseStatus;
+import com.opentext.lre.actions.common.helpers.result.model.junit.Testcase;
+import com.opentext.lre.actions.common.helpers.result.model.junit.Testsuite;
 import com.opentext.lre.actions.common.helpers.result.model.junit.Testsuites;
 import com.opentext.lre.actions.common.helpers.utils.LogHelper;
 import com.thoughtworks.xstream.XStream;
-import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
 import org.apache.commons.lang.StringUtils;
 import com.opentext.lre.actions.common.helpers.result.model.junit.*;
 
@@ -174,10 +178,10 @@ public class LreTestRunBuilder {
         this.retry = (retry == null || retry.isEmpty()) ? "NO_RETRY" : retry;
         this.retryDelay = ("NO_RETRY".equals(this.retry)) ? "0" : (retryDelay == null || retryDelay.isEmpty()) ? "5" : retryDelay;
         this.retryOccurrences = ("NO_RETRY".equals(this.retry)) ? "0" : (retryOccurrences == null || retryOccurrences.isEmpty()) ? "3" : retryOccurrences;
-        this.trendReportWaitTime = (trendReportWaitTime != null && !Objects.requireNonNull(retryDelay).isEmpty() && LreTestRunHelper.isInteger(trendReportWaitTime)) ? trendReportWaitTime : "0";
+        this.trendReportWaitTime = (trendReportWaitTime != null && !trendReportWaitTime.isEmpty() && LreTestRunHelper.isInteger(trendReportWaitTime)) ? trendReportWaitTime : "0";
         this.authenticateWithToken = authenticateWithToken;
         this.searchTimeslot = searchTimeslot;
-        this.output = Paths.get(output);
+        this.output = (output == null) ? null : Paths.get(output);
         this.workspace = Paths.get(workspace);
         this.buildStatus = BuildStatus.Initiated;
         this.enableStackTrace = enableStackTrace;
@@ -193,7 +197,7 @@ public class LreTestRunBuilder {
     public LreTestRunBuilder(LreTestRunModel lreTestRunModel)
     {
         this(lreTestRunModel.getLreServerAndPort(),
-                new UsernamePasswordCredentials(lreTestRunModel.getUsername(),lreTestRunModel.getPassword()),
+                new UsernamePasswordCredentials(lreTestRunModel.getUsername(), lreTestRunModel.getPassword().toCharArray()),
                 lreTestRunModel.getDomain(),
                 lreTestRunModel.getProject(),
                 lreTestRunModel.getTestToRun(),
@@ -211,7 +215,7 @@ public class LreTestRunBuilder {
                 lreTestRunModel.getTrendReportId(),
                 lreTestRunModel.isHttpsProtocol(),
                 lreTestRunModel.getProxyOutURL(),
-                new UsernamePasswordCredentials(lreTestRunModel.getUsernameProxy(),lreTestRunModel.getPasswordProxy()),
+                new UsernamePasswordCredentials(lreTestRunModel.getUsernameProxy(), lreTestRunModel.getPasswordProxy().toCharArray()),
                 lreTestRunModel.getRetry(),
                 lreTestRunModel.getRetryDelay(),
                 lreTestRunModel.getRetryOccurrences(),
@@ -222,11 +226,25 @@ public class LreTestRunBuilder {
                 lreTestRunModel.getOutput(),
                 lreTestRunModel.getWorkspace());
         this.lreTestRunModel = lreTestRunModel;
+        // Set the static flag for stack trace output based on configuration
+        LreTestRunHelper.ENABLE_STACKTRACE = lreTestRunModel.isEnableStacktrace();
 
     }
 
 
     // </editor-fold>
+
+    private static String passwordToString(UsernamePasswordCredentials credentials) {
+        if (credentials == null) {
+            return "";
+        }
+        char[] password = credentials.getPassword();
+        return password == null ? "" : new String(password);
+    }
+
+    private static String usernameToString(UsernamePasswordCredentials credentials) {
+        return credentials == null ? "" : credentials.getUserName();
+    }
 
     public LreTestRunModel getLreTestRunModel() {
         if (lreTestRunModel == null) {
@@ -234,7 +252,7 @@ public class LreTestRunBuilder {
                     new LreTestRunModel(
                             lreServerAndPort.trim(),
                             usernamePasswordCredentialsLre.getUserName(),
-                            usernamePasswordCredentialsLre.getPassword(),
+                            passwordToString(usernamePasswordCredentialsLre),
                             domain.trim(),
                             project.trim(),
                             testToRun,
@@ -251,8 +269,8 @@ public class LreTestRunBuilder {
                             trendReportId,
                             httpsProtocol,
                             proxyOutURL,
-                            usernamePasswordCredentialsProxy.getUserName(),
-                            usernamePasswordCredentialsProxy.getPassword(),
+                            usernameToString(usernamePasswordCredentialsProxy),
+                            passwordToString(usernamePasswordCredentialsProxy),
                             retry,
                             retryDelay,
                             retryOccurrences,
@@ -261,7 +279,7 @@ public class LreTestRunBuilder {
                             searchTimeslot,
                             statusBySLA,
                             enableStackTrace,
-                            output.toString(),
+                            output == null ? "" : output.toString(),
                             workspace.toString());
         }
         return lreTestRunModel;
